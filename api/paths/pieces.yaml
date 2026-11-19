@@ -1,0 +1,44 @@
+get:
+  operationId: listPieces
+  tags: [Pieces]
+  summary: List pieces
+  description: |
+    Returns all pieces of the current musician, newest first.
+    The response is wrapped in an object so that pagination metadata can be
+    added later without a breaking change.
+  responses:
+    '200':
+      description: The pieces.
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/PieceList.yaml
+    default:
+      $ref: ../responses/Problem.yaml
+post:
+  operationId: createPiece
+  tags: [Pieces]
+  summary: Create a piece
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../schemas/PieceCreate.yaml
+  responses:
+    '201':
+      description: The piece was created.
+      headers:
+        Location:
+          description: URL of the new piece.
+          schema:
+            type: string
+            format: uri-reference
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/Piece.yaml
+    '400':
+      $ref: ../responses/Problem.yaml
+    default:
+      $ref: ../responses/Problem.yaml

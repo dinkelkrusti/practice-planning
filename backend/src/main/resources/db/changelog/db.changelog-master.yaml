@@ -1,0 +1,8 @@
+# Lists the changesets in order. Changesets themselves are Liquibase formatted
+# SQL files in changes/. Rules (docs/decisions/0006-database-evolution.md):
+# never edit a changeset that has been merged, and every changeset must be
+# compatible with the previous backend version (expand/contract).
+databaseChangeLog:
+  - include:
+      file: changes/0001-create-piece.sql
+      relativeToChangelogFile: true

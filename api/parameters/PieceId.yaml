@@ -1,0 +1,7 @@
+name: pieceId
+in: path
+required: true
+description: Id of the piece.
+schema:
+  type: string
+  format: uuid

@@ -1,0 +1,39 @@
+<section>
+  <h2>Add a piece</h2>
+  <form [formGroup]="form" (ngSubmit)="add()">
+    <label>
+      Title
+      <input formControlName="title" maxlength="200" required />
+    </label>
+    <label>
+      Composer
+      <input formControlName="composer" maxlength="200" />
+    </label>
+    <button type="submit" [disabled]="form.invalid || saving()">Add</button>
+  </form>
+  @if (error(); as message) {
+    <p role="alert" class="error">{{ message }}</p>
+  }
+</section>
+
+<section>
+  <h2>Pieces</h2>
+  @if (service.pieces.isLoading()) {
+    <p>Loading…</p>
+  } @else if (service.pieces.error()) {
+    <p role="alert" class="error">Could not load pieces. Is the backend running?</p>
+  } @else {
+    <ul>
+      @for (piece of service.pieces.value(); track piece.id) {
+        <li>
+          <strong>{{ piece.title }}</strong>
+          @if (piece.composer) {
+            <span> by {{ piece.composer }}</span>
+          }
+        </li>
+      } @empty {
+        <li>No pieces yet.</li>
+      }
+    </ul>
+  }
+</section>
