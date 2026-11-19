@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: practice-planning
+  threads:
+    virtual:
+      enabled: true
+  jpa:
+    open-in-view: false
+    hibernate:
+      # Liquibase owns the schema; Hibernate only checks that the mapping matches it.
+      ddl-auto: validate
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+  mvc:
+    problemdetails:
+      enabled: true
+
+logging:
+  pattern:
+    correlation: "[client=%X{clientVersion:-}] "
