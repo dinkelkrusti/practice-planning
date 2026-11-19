@@ -1,0 +1,68 @@
+name: API spec
+
+on:
+  pull_request:
+    paths: ['api/**', '.github/workflows/api.yml']
+  push:
+    branches: [main]
+    paths: ['api/**', '.github/workflows/api.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  lint-and-bundle:
+    name: Lint and check bundle
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: api
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+        with:
+          package_json_file: api/package.json
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: api/package.json
+          cache: pnpm
+          cache-dependency-path: api/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - name: Committed bundle is up to date
+        run: |
+          pnpm bundle
+          git diff --exit-code -- openapi.bundled.yaml || {
+            echo "::error::api/openapi.bundled.yaml is out of date. Run 'pnpm bundle' in api/ and commit the result."
+            exit 1
+          }
+
+  breaking-changes:
+    name: No breaking changes
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.26'
+          cache: false
+      # Installed through the Go module proxy; go verifies it against the public checksum database.
+      - run: go install github.com/oasdiff/oasdiff@v1.37.0
+      - name: Compare with the base branch
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          if ! git cat-file -e "origin/${BASE_REF}:api/openapi.bundled.yaml" 2>/dev/null; then
+            echo "Base branch has no bundled spec yet; nothing to compare."
+            exit 0
+          fi
+          git show "origin/${BASE_REF}:api/openapi.bundled.yaml" > /tmp/base.yaml
+          "$(go env GOPATH)/bin/oasdiff" breaking /tmp/base.yaml api/openapi.bundled.yaml --fail-on ERR
+          echo "## API changelog" >> "$GITHUB_STEP_SUMMARY"
+          "$(go env GOPATH)/bin/oasdiff" changelog /tmp/base.yaml api/openapi.bundled.yaml --format markdown >> "$GITHUB_STEP_SUMMARY"

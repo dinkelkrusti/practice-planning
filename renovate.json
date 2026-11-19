@@ -1,0 +1,53 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Dependency updates, see docs/decisions/0003-supply-chain.md",
+  "extends": ["config:recommended", "helpers:pinGitHubActionDigests", "docker:pinDigests"],
+  "timezone": "Europe/Berlin",
+  "rangeStrategy": "pin",
+  "minimumReleaseAge": "7 days",
+  "internalChecksFilter": "strict",
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "minimumReleaseAge": null,
+    "labels": ["security"]
+  },
+  "osvVulnerabilityAlerts": true,
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on monday"]
+  },
+  "packageRules": [
+    {
+      "description": "Angular packages move together",
+      "matchPackageNames": ["@angular/**", "@angular-devkit/**"],
+      "groupName": "Angular"
+    },
+    {
+      "description": "Spring Boot parent and the Kotlin version it manages",
+      "matchPackageNames": ["org.springframework.boot:**"],
+      "groupName": "Spring Boot"
+    },
+    {
+      "description": "Angular 22 supports TypeScript 6.0 only; let Angular updates drive TypeScript",
+      "matchPackageNames": ["typescript"],
+      "matchUpdateTypes": ["major", "minor"],
+      "enabled": false
+    }
+  ],
+  "customManagers": [
+    {
+      "description": "Postgres image used by Testcontainers (keep in sync with backend/compose.yaml)",
+      "customType": "regex",
+      "managerFilePatterns": ["/^backend/src/test/kotlin/.+\\.kt$/"],
+      "matchStrings": ["\"(?<depName>postgres):(?<currentValue>[^@\"]+)@(?<currentDigest>sha256:[a-f0-9]+)\""],
+      "datasourceTemplate": "docker"
+    },
+    {
+      "description": "oasdiff installed with go install in CI",
+      "customType": "regex",
+      "managerFilePatterns": ["/^\\.github/workflows/.+\\.yml$/"],
+      "matchStrings": ["go install (?<depName>github\\.com/oasdiff/oasdiff)@(?<currentValue>v[0-9.]+)"],
+      "datasourceTemplate": "go"
+    }
+  ]
+}

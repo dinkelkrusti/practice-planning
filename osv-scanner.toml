@@ -1,0 +1,8 @@
+# Exceptions for the vulnerability scan (docs/decisions/0003-supply-chain.md).
+# Every entry needs a reason and an expiry date (at most 30 days ahead). When
+# it expires, the scan fails again and forces another look.
+#
+# [[IgnoredVulns]]
+# id = "GHSA-xxxx-xxxx-xxxx"
+# ignoreUntil = 2026-12-31T00:00:00Z
+# reason = "No fix released yet; the vulnerable code path (X) is not used because Y."
