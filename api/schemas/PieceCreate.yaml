@@ -1,0 +1,11 @@
+type: object
+description: The fields a client provides to create a piece.
+required: [title]
+properties:
+  title:
+    type: string
+    minLength: 1
+    maxLength: 200
+  composer:
+    type: [string, 'null']
+    maxLength: 200

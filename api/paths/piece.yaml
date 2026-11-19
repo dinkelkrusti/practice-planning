@@ -1,0 +1,17 @@
+parameters:
+  - $ref: ../parameters/PieceId.yaml
+get:
+  operationId: getPiece
+  tags: [Pieces]
+  summary: Get a piece
+  responses:
+    '200':
+      description: The piece.
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/Piece.yaml
+    '404':
+      $ref: ../responses/Problem.yaml
+    default:
+      $ref: ../responses/Problem.yaml

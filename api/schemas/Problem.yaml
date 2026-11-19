@@ -1,0 +1,19 @@
+type: object
+description: |
+  Error details as defined by RFC 9457 (Problem Details for HTTP APIs).
+  Provisional until the API conventions round settles the error format.
+properties:
+  type:
+    type: string
+    format: uri-reference
+    default: about:blank
+  title:
+    type: string
+  status:
+    type: integer
+    format: int32
+  detail:
+    type: string
+  instance:
+    type: string
+    format: uri-reference

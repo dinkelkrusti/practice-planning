@@ -1,0 +1,184 @@
+openapi: 3.1.0
+info:
+  title: Practice Planning API
+  version: 0.1.0
+  summary: Plan and track structured practice of musical pieces.
+  description: |
+    Spec-first API of the Practice Planning app. This file is the source of
+    truth: the Spring server interfaces and the Angular client are generated
+    from it.
+
+    Versioning: `info.version` follows semver and changes with every API
+    change. Only the major version appears in the URL (`/api/v1`). Breaking
+    changes within a major version are rejected in CI. See
+    `docs/decisions/0004-api-evolution.md`.
+  license:
+    name: Proprietary
+    identifier: LicenseRef-Proprietary
+servers:
+  - url: /api/v1
+    description: Same-origin deployment; the ingress routes /api to the backend.
+tags:
+  - name: Pieces
+    description: The pieces a musician practices.
+paths:
+  /pieces:
+    get:
+      operationId: listPieces
+      tags:
+        - Pieces
+      summary: List pieces
+      description: |
+        Returns all pieces of the current musician, newest first.
+        The response is wrapped in an object so that pagination metadata can be
+        added later without a breaking change.
+      responses:
+        '200':
+          description: The pieces.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PieceList'
+        default:
+          $ref: '#/components/responses/Problem'
+    post:
+      operationId: createPiece
+      tags:
+        - Pieces
+      summary: Create a piece
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PieceCreate'
+      responses:
+        '201':
+          description: The piece was created.
+          headers:
+            Location:
+              description: URL of the new piece.
+              schema:
+                type: string
+                format: uri-reference
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Piece'
+        '400':
+          $ref: '#/components/responses/Problem'
+        default:
+          $ref: '#/components/responses/Problem'
+  /pieces/{pieceId}:
+    parameters:
+      - $ref: '#/components/parameters/PieceId'
+    get:
+      operationId: getPiece
+      tags:
+        - Pieces
+      summary: Get a piece
+      responses:
+        '200':
+          description: The piece.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Piece'
+        '404':
+          $ref: '#/components/responses/Problem'
+        default:
+          $ref: '#/components/responses/Problem'
+components:
+  schemas:
+    Problem:
+      type: object
+      description: |
+        Error details as defined by RFC 9457 (Problem Details for HTTP APIs).
+        Provisional until the API conventions round settles the error format.
+      properties:
+        type:
+          type: string
+          format: uri-reference
+          default: about:blank
+        title:
+          type: string
+        status:
+          type: integer
+          format: int32
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri-reference
+    Piece:
+      type: object
+      description: A piece of music the musician practices.
+      required:
+        - id
+        - title
+        - composer
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Server-assigned id.
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          examples:
+            - Ballade No. 1 in G minor
+            - Op. 23
+        composer:
+          type:
+            - string
+            - 'null'
+          maxLength: 200
+          description: Composer, or null if unknown or not entered.
+          examples:
+            - Frédéric Chopin
+        createdAt:
+          type: string
+          format: date-time
+          description: When the piece was created (UTC).
+    PieceList:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Piece'
+    PieceCreate:
+      type: object
+      description: The fields a client provides to create a piece.
+      required:
+        - title
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        composer:
+          type:
+            - string
+            - 'null'
+          maxLength: 200
+  responses:
+    Problem:
+      description: An error, described as RFC 9457 problem details.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+  parameters:
+    PieceId:
+      name: pieceId
+      in: path
+      required: true
+      description: Id of the piece.
+      schema:
+        type: string
+        format: uuid

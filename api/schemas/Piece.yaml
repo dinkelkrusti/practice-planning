@@ -1,0 +1,22 @@
+type: object
+description: A piece of music the musician practices.
+required: [id, title, composer, createdAt]
+properties:
+  id:
+    type: string
+    format: uuid
+    description: Server-assigned id.
+  title:
+    type: string
+    minLength: 1
+    maxLength: 200
+    examples: [Ballade No. 1 in G minor, Op. 23]
+  composer:
+    type: [string, 'null']
+    maxLength: 200
+    description: Composer, or null if unknown or not entered.
+    examples: [Frédéric Chopin]
+  createdAt:
+    type: string
+    format: date-time
+    description: When the piece was created (UTC).

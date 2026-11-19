@@ -1,0 +1,16 @@
+{
+  "name": "practice-planning-api",
+  "private": true,
+  "description": "OpenAPI spec of the Practice Planning app: lint and bundle.",
+  "packageManager": "pnpm@12.20.0",
+  "engines": {
+    "node": "24.22.3"
+  },
+  "scripts": {
+    "lint": "redocly lint openapi.yaml",
+    "bundle": "redocly bundle openapi.yaml --output openapi.bundled.yaml"
+  },
+  "devDependencies": {
+    "@redocly/cli": "2.77.0"
+  }
+}

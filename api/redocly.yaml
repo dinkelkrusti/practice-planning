@@ -1,0 +1,31 @@
+extends:
+  - recommended-strict
+
+rules:
+  # Turned off until the auth round adds a security scheme and 401 responses
+  # to every operation (docs/decisions/0002-walking-skeleton.md). Re-enable both then.
+  security-defined: off
+  operation-4xx-response: off
+  # Every operation must be documented and identifiable.
+  operation-summary: error
+  operation-operationId: error
+  operation-description: off
+  # Same-origin relative server URL is intended.
+  no-server-example.com: error
+  no-empty-servers: error
+  # docs/decisions/0005-enums.md: every enum declares whether clients must
+  # tolerate values they do not know yet.
+  rule/enum-declares-extensibility:
+    subject:
+      type: Schema
+    where:
+      - subject:
+          type: Schema
+          property: enum
+        assertions:
+          defined: true
+    assertions:
+      required:
+        - x-extensible
+    message: Every enum must declare `x-extensible` (true or false), see docs/decisions/0005-enums.md.
+    severity: error
