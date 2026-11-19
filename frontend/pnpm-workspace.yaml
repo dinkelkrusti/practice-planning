@@ -1,0 +1,20 @@
+packages:
+  - '.'
+
+# Supply chain policy, see docs/decisions/0003-supply-chain.md
+# Only install versions that have been public for at least 7 days (in minutes).
+minimumReleaseAge: 10080
+# Fail instead of silently picking an older version when only too-new versions match.
+minimumReleaseAgeStrict: true
+# Refuse versions published with weaker provenance than earlier versions.
+trustPolicy: no-downgrade
+# New dependencies are always saved with an exact version.
+saveExact: true
+# Install scripts are blocked unless explicitly allowed here. The Angular CLI
+# denies these four by default; they work without their install scripts.
+strictDepBuilds: true
+allowBuilds:
+  '@parcel/watcher': false
+  esbuild: false
+  lmdb: false
+  msgpackr-extract: false
