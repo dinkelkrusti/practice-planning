@@ -23,7 +23,7 @@ the plainest version of that:
 ```
 Windows                                  WSL 2 (Linux VM)
 ┌──────────────────────────────┐         ┌───────────────────────────────┐
-│ IntelliJ / Gradle / JVM      │         │ Ubuntu 26.04 LTS              │
+│ IntelliJ / Maven / JVM       │         │ Ubuntu 26.04 LTS              │
 │  ├─ Testcontainers ──┐       │         │  └─ dockerd (Docker Engine)   │
 │  └─ Spring Boot ─────┤       │  TCP    │      ├─ postgres container    │
 │     Docker Compose   ├──────────────────▶      └─ ...                   │
@@ -258,11 +258,86 @@ docker compose version
 docker run --rm hello-world   # must print "Hello from Docker!", not nothing
 ```
 
-## 7. Verify with the project (once the app exists)
+## 7. Install the project toolchain on Windows
 
-Once the app skeleton exists: run the tests from IntelliJ or with
-`./gradlew test`. Testcontainers should start PostgreSQL 18 and the tests
-should pass.
+Everything below runs on Windows, not in Linux. Use these exact versions; the
+project checks them and refuses older ones.
+
+| Tool | Version | Where to get it |
+| --- | --- | --- |
+| JDK | 25 | IntelliJ: *File → Project Structure → SDKs → + → Download JDK*, vendor *Eclipse Temurin*, version 25. Or the installer from [adoptium.net](https://adoptium.net/temurin/releases/?version=25). |
+| Node.js | 24.22.3 (LTS) | Windows installer (`.msi`) from [nodejs.org](https://nodejs.org/en/download), choose version 24.22.3. |
+| pnpm | 12.20.0 | Comes through Corepack, which ships with Node.js 24 (see below). |
+| Maven | none | Not needed: the project brings its own Maven through the wrapper (`mvnw.cmd`), which downloads Maven 3.9.16 and verifies its checksum. |
+
+Enable pnpm once, in PowerShell:
+
+```powershell
+corepack enable pnpm
+```
+
+Corepack reads the `packageManager` field in `api/package.json` and
+`frontend/package.json` and uses exactly that pnpm version, verified against
+the npm registry's signature.
+
+**Check:**
+
+```powershell
+java -version      # openjdk version "25..."
+node --version     # v24.22.3
+cd frontend; pnpm --version; cd ..   # 12.20.0
+```
+
+If `java -version` shows another version, set `JAVA_HOME` to the JDK 25
+folder (user environment variable) and reopen PowerShell.
+
+## 8. Build and run the project
+
+Clone the repository and open the folder in IntelliJ. Then, in PowerShell from
+the repository root:
+
+**Backend tests.** This generates the server code from the API spec, compiles,
+and runs all tests. The integration tests start PostgreSQL 18 through
+Testcontainers, which is the real test of steps 1 to 6.
+
+```powershell
+cd backend
+.\mvnw.cmd verify
+```
+
+**Run the app.** Start Ubuntu first (step 5b). Then, in one PowerShell window:
+
+```powershell
+cd backend
+.\mvnw.cmd spring-boot:run
+```
+
+Spring Boot starts the database from `backend/compose.yaml` on its own and
+applies the database migrations. The API runs on <http://localhost:8080/api/v1/pieces>.
+
+In a second window:
+
+```powershell
+cd frontend
+pnpm install
+pnpm start
+```
+
+Open <http://localhost:4200>. The dev server forwards `/api` to the backend,
+so add a piece there and it is stored in PostgreSQL.
+
+**API spec.** When you change anything in `api/`, lint it and regenerate the
+bundled file that both code generators read:
+
+```powershell
+cd api
+pnpm install
+pnpm lint
+pnpm bundle
+```
+
+Commit `api/openapi.bundled.yaml` together with your spec change. CI fails if
+it is out of date.
 
 ---
 
@@ -272,6 +347,9 @@ should pass.
 | --- | --- | --- |
 | `Cannot connect to the Docker daemon at tcp://localhost:2375` | Ubuntu isn't running (e.g. after a reboot) or Docker is stopped | `wsl -d Ubuntu-26.04 --exec true`, then if it persists `wsl -d Ubuntu-26.04 -- systemctl status docker` |
 | Testcontainers: `Could not find a valid Docker environment` | IntelliJ was started before `DOCKER_HOST` was set | Restart IntelliJ completely |
+| `mvnw.cmd`: `Detected JDK Version: ... is not in the allowed range [25,)` | Maven runs with an older JDK | Set `JAVA_HOME` to JDK 25 and reopen the shell |
+| `pnpm install` fails with `ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION` or `ERR_PNPM_NO_MATURE_MATCHING_VERSION` | A version you added is younger than 7 days (supply chain policy) | Pick an older version, or wait. See `docs/decisions/0003-supply-chain.md` |
+| `pnpm start` shows "Could not load pieces" | Backend not running | Start it with `.\mvnw.cmd spring-boot:run` in `backend/` |
 | `wsl --install` fails with `...MountDisk/HCS/ERROR_FILE_NOT_FOUND` mentioning `C:\Program Files\WSL\system.vhd` | WSL's own installation is damaged (a file is missing, e.g. after a manual cleanup) | In an admin PowerShell: `wsl --update`, then `wsl --shutdown`, then retry |
 | `wsl --update` fails with `The older version of Windows Subsystem for Linux cannot be removed` (exit code 1603) | Windows' saved copy of the installed WSL installer (in `C:\Windows\Installer`) is corrupt, so the old version can't be uninstalled | Download the installer for *your current* version (`wsl --version`) from [WSL releases](https://github.com/microsoft/WSL/releases), check it is signed by Microsoft (file Properties → Digital Signatures), rename it to `wsl.msi`, then in an admin shell run `msiexec /fomusv "<path>\wsl.msi"`. This repairs and re-saves it. Then `wsl --update` works |
 | `docker run` from Windows succeeds but prints nothing | WSL's default localhost relay drops streamed connections | Do step 4d (mirrored networking) |
